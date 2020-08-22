@@ -24,9 +24,11 @@ clear
 
 load TrajData.mat
 load color.mat
+load ZeroData.mat
 
-
-
+Traj=DataZero
+Traj.data
+Traj.label
 
 Traj=DataHu2;
 Traj1 = DataHu2;
@@ -34,7 +36,7 @@ Traj2 = DataHu2;
 Traj3 = DataHu2;
 Traj4 = DataHu2;
 
-Iter = 20;
+Iter = 2;
 rmax = 12;
 rmin = 1;
 wr=rmax:(rmin-rmax)/(Iter-1):rmin;
@@ -138,7 +140,7 @@ Traj2 = DataLin;
 Traj3 = DataLin;
 Traj4 = DataLin;
 
-Iter = 7;
+Iter = 2;
 rmax = 45;
 rmin = 10;
 wr=rmax:(rmin-rmax)/(Iter-1):rmin;
@@ -244,7 +246,7 @@ Traj2 = DataMorris;
 Traj3 = DataMorris;
 Traj4 = DataMorris;
 
-Iter = 7;
+Iter = 2;
 rmax = 3;
 rmin = 1;
 wr=rmax:(rmin-rmax)/(Iter-1):rmin;
