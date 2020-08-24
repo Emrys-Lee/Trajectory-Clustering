@@ -2,14 +2,14 @@ close all
 clear
 
 %load vdData.mat
-dataset_idx = 1;
-dataset_names = ["00001_00005", "00016_00001"];
+dataset_idx = 2;
+dataset_names = ["00002_00005", "00005_00002", "00016_00009", "IMG_0121"];
 dataset_name = dataset_names(dataset_idx)
 load(strcat(dataset_name, "Data.mat"));
 load color.mat
 
-dt = 1; % data type, 0:bboxes, 1:splines
-if dt==0
+use_3d = 0; % data type, 0:bboxes, 1:splines
+if use_3d==1
     Traj=DataBboxes;
 else
     Traj=DataSplines;
@@ -22,7 +22,7 @@ Traj2 = Traj;
 Traj3 = Traj;
 Traj4 = Traj;
 
-if dt==0
+if use_3d==0
     Iter = 20;
     rmax = 100;%100 is best for bbox;
     rmin = 1;%1 is best for bbox
@@ -50,7 +50,7 @@ D=30;
 
 figure
 subplot(2,3,1)
-if dt==0
+if use_3d==0
     img1=imread('black.jpg');
     %img1=imread('IMG_0121.jpg');
 else
@@ -85,6 +85,12 @@ for k=1:Iter
     end
 end
 
+% save mat
+if use_3d==0 % bboxes
+    save(strcat(dataset_name, '2DResults.mat'), 'Traj1','Traj2','Traj3','Traj4');
+else
+    save(strcat(dataset_name, '3DResults.mat'), 'Traj1','Traj2','Traj3','Traj4');
+end
 
 subplot(2,3,2)
 image(img1)
@@ -136,3 +142,9 @@ end
 hold off
 axis tight
 title('Proposed FastAMKS')
+
+if use_3d==0 % bboxes
+    saveas(gcf, strcat(dataset_name, '2DResults.jpg'));
+else
+    saveas(gcf, strcat(dataset_name, '3DResults.jpg'));
+end
