@@ -14,16 +14,9 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import FancyArrowPatch
 import matplotlib.colors as mcolors
 from mpl_toolkits.mplot3d import proj3d
+from plot import draw_traj_all_id_spline_with_cluster, draw_traj_proj_all, tableau10, tableau10_extended
 
-use_old_vd = True
-use_3d = False
-tableau10_extended = list(mcolors.TABLEAU_COLORS) + ['k', 'b', 'lime', 'cyan', 'yellow', 'brown', 'plum', 'navy']
-tableau10 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),  
-            (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),  
-            (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),  
-            (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),  
-            (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)][::2]
-
+"""
 if use_old_vd:
     sys.path.insert(1, '/media/sda/fangyu/Projects/single-view-reconstruction/')
     from vehicle_dataset import *
@@ -32,8 +25,79 @@ if use_old_vd:
 else:
     sys.path.insert(1, '/media/sda/fangyu/Projects/traffic4d/')
     from dataset.vehicle import *
-    from utils.utils import generate_spline_points_world, homo 
+    from utils.utils import generate_spline_points_world, homo, cart, find_rt_c2w
     from config.inputs import dataset_names_list, result_dir
+"""
+
+from utils_eval import *
+
+
+def find_best_affine(use_old_vd, dataset_idx):
+    use_3d = True
+    if use_old_vd:
+        dataset_name = dataset_names_list[dataset_idx]
+        if use_3d:
+            result_name = dataset_name + "3DResults.mat"
+        else:
+            result_name = dataset_name + "2DResults.mat"
+    else:
+        result_dir = './'
+        dataset_name = dataset_names_list[dataset_idx]
+        if use_3d:
+            result_name = result_dir + '/' + dataset_name + '3DResults.mat'
+        else:
+            result_name = result_dir + '/' + dataset_name + '2DResults.mat'
+
+    # show gt
+    result_name = dataset_name + "Data.mat"
+    mat_data_before = loadmat(result_name)
+    print(mat_data_before.keys())
+    method_name = 'gt'
+    traj_name = 'DataSplines' if use_3d else 'DataBboxes'
+    spline_points_before = np.array([np.array(d['data']).flatten() for d in mat_data_before[traj_name][0]])
+    cluster_ids_gt = np.array([int(d['label'][0][0]) for d in mat_data_before[traj_name][0]])-2
+
+    n_random = 100
+    line = ""
+    # generate random offset
+    result_dir = 'random_affine/'+dataset_name
+    for ni in range(n_random):
+        affine_w2s = find_affine_w2s_random(dataset_name)
+        print(ni, affine_w2s)
+        line += (str(ni) + '\n' + np.array_str(affine_w2s) + '\n')
+        draw_traj_proj_all(spline_points_before, cluster_ids_gt, str(ni), dataset_name, use_3d=True, thick=False, affine_w2s=affine_w2s, result_dir='random_affine/'+dataset_name)
+    with open(result_dir + '/records.txt', 'w') as f:
+        f.write(line)
+
+
+def draw_vd(use_old_vd, dataset_idx):
+    if use_old_vd:
+        dataset_name = dataset_names_list[dataset_idx]
+    else:
+        result_dir = './'
+        dataset_name = dataset_names_list[dataset_idx]
+
+    # show gt
+    result_name = dataset_name + "vd.mat"
+    mat_data_before = loadmat(result_name)
+    print(mat_data_before.keys())
+    affine_w2s = find_affine_w2s(dataset_name)
+
+    use_3d = True
+    method_name = 'vd_3d' if use_3d else 'vd_2d'
+    traj_name = 'DataSplines' if use_3d else 'DataBboxes'
+    spline_points_before = np.array([np.array(d['data']).flatten() for d in mat_data_before[traj_name][0]])
+    cluster_ids_gt = np.array([int(d['label'][0][0]) for d in mat_data_before[traj_name][0]])-2
+
+    draw_traj_proj_all(spline_points_before, cluster_ids_gt, method_name, dataset_name, use_3d, thick=False, affine_w2s=affine_w2s, result_dir='visual_clusters_goin_paper')
+
+    use_3d = False
+    method_name = 'vd_3d' if use_3d else 'vd_2d'
+    traj_name = 'DataSplines' if use_3d else 'DataBboxes'
+    spline_points_before = np.array([np.array(d['data']).flatten() for d in mat_data_before[traj_name][0]])
+    draw_traj_proj_all(spline_points_before, cluster_ids_gt, method_name, dataset_name, use_3d, thick=False, result_dir='visual_clusters_goin_paper')
+    draw_traj_all_id_spline_with_cluster(spline_points_before, cluster_ids_gt)
+
 
 def eval_mat(use_old_vd, use_3d, dataset_idx):
     if use_old_vd:
@@ -57,34 +121,48 @@ def eval_mat(use_old_vd, use_3d, dataset_idx):
     print(mat_data_before.keys())
     method_name = 'gt'
     traj_name = 'DataSplines' if use_3d else 'DataBboxes'
-    spline_points_before = np.array([np.array(d['data']).flatten() for d in mat_data_before[traj_name][0]])
+    spline_points_before_3d = np.array([np.array(d['data']).flatten() for d in mat_data_before['DataSplines'][0]])
+    spline_points_before_2d = np.array([np.array(d['data']).flatten() for d in mat_data_before['DataBboxes'][0]])
     cluster_ids_gt = np.array([int(d['label'][0][0]) for d in mat_data_before[traj_name][0]])-2
+    #draw_traj_all_id_spline_with_cluster(spline_points_before, cluster_ids_gt)
     #draw_traj_proj_all(spline_points_before, cluster_ids_gt, method_name, dataset_idx, use_3d, thick=False)
     #exit(0)
 
+    affine_w2s = find_affine_w2s(dataset_name)
 
     # evaluate and show each method
     for (traj_name, method_name) in zip(['Traj1', 'Traj2', 'Traj3', 'Traj4'], ['MS', 'MBMS', 'AMKS noreg', 'AMKS']):
         spline_points = np.array([np.array(d['data']).flatten() for d in mat_data[traj_name][0]])
         cluster_ids_gt = np.array([int(d['label'][0][0]) for d in mat_data[traj_name][0]])-2
-        n_clusters = max(cluster_ids_gt)+1
+        cluster_ids_set = set()
+        for cluster_id in cluster_ids_gt:
+            cluster_ids_set.add(cluster_id)
+        # n_clusters = max(cluster_ids_gt)+1
+        cluster_ids_set = list(cluster_ids_set)
+        n_clusters = len(cluster_ids_set)-1
+        for i in range(len(cluster_ids_gt)):
+            if cluster_ids_gt[i] >= 0:
+                cluster_ids_gt[i] = cluster_ids_set.index(cluster_ids_gt[i])
         # gmm = mixture.BayesianGaussianMixture(n_components=n_clusters, covariance_type='diag').fit(spline_points)
         # cluster_ids = gmm.predict(spline_points)
+        spline_points, spline_points_before_2d, spline_points_before_3d, cluster_ids_gt = filter_out_outlier_clusters([spline_points, spline_points_before_2d, spline_points_before_3d, cluster_ids_gt])
+        #print(cluster_ids_gt)
         splines,spline_points = np_spline_fit(spline_points)
         kmeans =  SpectralClustering(n_clusters=n_clusters, affinity='nearest_neighbors',
          random_state=0).fit(splines)#spline_points.reshape((len(spline_points),-1)))
+        # kmeans =  SpectralClustering(n_clusters=n_clusters, affinity='nearest_neighbors',
+        #  random_state=0).fit(spline_points.reshape((len(spline_points),-1)))
         cluster_ids = kmeans.labels_
         # gmm = mixture.BayesianGaussianMixture(n_components=n_clusters, covariance_type='diag').fit(splines)
         # cluster_ids = gmm.predict(splines)
         # print(splines.astype(int), cluster_ids_gt, cluster_ids)
 
-        ### below four lines used for evaluation
-        _, cluster_ids, cluster_ids_gt = filter_out_outlier_clusters(None, cluster_ids, cluster_ids_gt)
+        ### below two lines used for evaluation
         print(str("3D results" if use_3d else "2D results") + ' ' + method_name)
-        eval_cluster_accuracy(cluster_ids, cluster_ids_gt)
-        draw_traj_all_id_spline_with_cluster(spline_points, cluster_ids)
-        #draw_traj_proj_all(spline_points, cluster_ids, method_name, dataset_idx, use_3d)
-        #draw_traj_proj_all(spline_points_before, cluster_ids, method_name+'before_', dataset_idx, use_3d, thick=False)
+        #eval_cluster_accuracy(cluster_ids, cluster_ids_gt)
+        #draw_traj_all_id_spline_with_cluster(spline_points_before_2d, cluster_ids)
+        draw_traj_proj_all(spline_points_before_3d, cluster_ids, method_name+'_3d_before_use3d_'+str(use_3d), dataset_name, use_3d=True, thick=False, affine_w2s=affine_w2s, result_dir='visual_clusters_goin_paper')
+        draw_traj_proj_all(spline_points_before_2d, cluster_ids, method_name+'_2d_before_use3d_'+str(use_3d), dataset_name, use_3d=False, thick=False, affine_w2s=affine_w2s, result_dir='visual_clusters_goin_paper')
 
 
 def eval_cluster_accuracy(cluster_ids0, cluster_ids1):
@@ -94,6 +172,7 @@ def eval_cluster_accuracy(cluster_ids0, cluster_ids1):
     assert min(cluster_ids0)>=0 and min(cluster_ids1)>=0
     n_clusters0 = max(cluster_ids0)+1
     n_clusters1 = max(cluster_ids1)+1
+    print(n_clusters1)
     # always make sure cluster0 has fewer cluster indices than cluster1
     if n_clusters0 > n_clusters1:
         cluster_ids0, cluster_ids1 = cluster_ids1, cluster_ids0
@@ -120,11 +199,17 @@ def eval_cluster_accuracy(cluster_ids0, cluster_ids1):
     print("best cluster matches: %d/%d - %.4f"%(n_correct_best, n_total, n_correct_best/n_total))
 
 
-def filter_out_outlier_clusters(spline_points, cluster_ids, cluster_ids_gt):
-    cluster_ids = np.array(cluster_ids)
-    cluster_ids_gt = np.array(cluster_ids_gt).flatten()
+def filter_out_outlier_clusters(data_list):
+    # assume data_list the last is cluster_ids_gt
+    cluster_ids_gt = np.array(data_list[-1]).flatten()
     index = np.where(cluster_ids_gt>=0)[0]
-    return spline_points[index] if spline_points is not None else None, cluster_ids[index], cluster_ids_gt[index]
+    data_list_filtered = []
+    for data in data_list:
+        data = np.array(data)
+        data_list_filtered.append(data[index])
+    return data_list_filtered
+
+    # return spline_points[index] if spline_points is not None else None, cluster_ids[index], cluster_ids_gt[index]
 
 
 def np_spline_fit(spline_points):
@@ -140,100 +225,15 @@ def np_spline_fit(spline_points):
     return np.array(splines), spline_points
 
 
-
-def draw_traj_all_id_spline_with_cluster(spline_points, cluster_ids):
-    fig = plt.figure(figsize=(12, 12))
-    ax = fig.add_subplot(111, projection='3d')
-    colors = ['r', 'g', 'b', 'c', 'm', 'y']
-
-    for spline, cluster_id in zip(spline_points, cluster_ids):
-        ax.plot(spline[:, 0], spline[:, 1], np.zeros_like(spline[:, 1]), color=list(tableau10_extended)[cluster_id])
-
-
-    #ax.set_xlim3d(-25, 25)
-    #ax.set_ylim3d(-10, 10)
-    #ax.set_zlim3d(0, 50)
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-    # axisEqual3D(ax)
-    ax.view_init(elev=-60, azim=-90)
-    # plt.savefig(output_img_name)
-    plt.show()
-    plt.close()
-    return
-
-
-def find_landmark_cam(plane, landmark_perspective):
-    height, width = 1080, 1920
-    focal = 2100.0
-    cx = width/2.0
-    cy = height/2.0
-    landmark_cam = []
-    for i in range(len(landmark_perspective)):
-        u, v = landmark_perspective[i]
-        a = np.array([[focal, 0.0, cx-u],[0.0, focal, cy-v],[plane[0], plane[1], plane[2]]])
-        b = np.array([0.0, 0.0, -plane[3]])
-        result = np.linalg.solve(a, b)
-        landmark_cam.append(result)
-    landmark_cam = np.array(landmark_cam)
-    return landmark_cam
-
-
-def find_affine_w2s():
-    with open("./results/IMG_0121_with_spline_clusters.vd", 'rb') as f:
-         vd = pkl.load(f)
-    plane = vd.plane
-    rt_c2w = find_rt_c2w(vd)
-
-    landmark_sate_path = "../visual_opengl/IMG_0121/bird_view.txt"
-    with open(landmark_sate_path, 'r') as f:
-        lines = f.readlines()
-    landmark_sate = []
-    for line in lines:
-        line_split = line.split(",")
-        landmark_2d = [float(line_split[0]), float(line_split[1])]
-        landmark_sate.append(landmark_2d)
-    landmark_sate = np.array(landmark_sate)
-
-    # landmark in cam coordinate
-    landmark_perspective_path = "../visual_opengl/IMG_0121/cam_view.pklcor"
-    with open(landmark_perspective_path, 'rb') as f:
-        landmark_perspective = pkl.load(f)
-    landmark_cam = find_landmark_cam(plane, landmark_perspective)
-    landmark_world = cart((rt_c2w @ ((homo(landmark_cam)).T)).T)
-
-    affine_w2s, _ = cv2.estimateAffine2D(landmark_world[:,0:2], landmark_sate)
-    print(affine_w2s)
-    return affine_w2s
-
-
-def draw_traj_proj_all(spline_points, cluster_ids, method_name, dataset_idx, use_3d=False, thick=True):
-    dataset_name = dataset_names_list[dataset_idx]
-    cluster_id_color_mapping = [6,5,1,0,4,3]
-    if use_3d:
-        img = cv2.imread(dataset_name+'_bird_view.jpg')
-        affine_w2s = find_affine_w2s()
-    else:
-        img = cv2.imread(dataset_name+'.jpg')
-        affine_w2s = None
-    for spline, cluster_id in zip(spline_points, cluster_ids):
-        if len(spline.shape) != 2:
-            spline = spline.reshape((-1,2))
-        if use_3d:
-            spline_ = homo(spline)
-            spline = (affine_w2s @ (spline_.T)).T
-        if cluster_id < 0:
-            continue
-        for i in range(len(spline)-1):
-            img = cv2.line(img, tuple(spline[i,0:2].astype(np.int32)), tuple(spline[i+1,0:2].astype(np.int32)), tableau10[cluster_id_color_mapping[cluster_id]][::-1], 8 if thick else 2)
-    out_img_name = dataset_name+'_'+method_name+'_bird_view.jpg' if use_3d else dataset_name+'_'+method_name+'_proj.jpg'
-    cv2.imwrite(out_img_name, img)
-    print(out_img_name + ' saved')
-
-
 np.set_printoptions(threshold=sys.maxsize, suppress=True)
-if len(sys.argv) == 1:
+if len(sys.argv) < 3:
     print("python post_process [use_3d] [dataset_idx in traffic4d]")
+    print("python post_process best-affine [dataset_idx in traffic4d]")
+    print("python post_process draw-vd [dataset_idx in traffic4d]")
     exit(0)
-eval_mat(use_old_vd, use_3d=bool(int(sys.argv[1])), dataset_idx=0 if use_old_vd else int(sys.argv[2]))
+if sys.argv[1] == 'best-affine':
+    find_best_affine(use_old_vd, dataset_idx=0 if use_old_vd else int(sys.argv[2]))
+elif sys.argv[1] == 'draw-vd':
+    draw_vd(use_old_vd, dataset_idx=0 if use_old_vd else int(sys.argv[2]))
+else:
+    eval_mat(use_old_vd, use_3d=bool(int(sys.argv[1])), dataset_idx=0 if use_old_vd else int(sys.argv[2]))

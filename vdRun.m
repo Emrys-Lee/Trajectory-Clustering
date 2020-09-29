@@ -2,14 +2,14 @@ close all
 clear
 
 %load vdData.mat
-dataset_idx = 2;
-dataset_names = ["00002_00005", "00005_00002", "00016_00009", "IMG_0121"];
+dataset_idx = 8;
+dataset_names = ["00002_00005", "00005_00002", "00016_00009", "IMG_0121", "00016_00001", "00016_00002", "00016_00003", "00016_00004", "00016_00007"];
 dataset_name = dataset_names(dataset_idx)
 load(strcat(dataset_name, "Data.mat"));
 load color.mat
 
-use_3d = 0; % data type, 0:bboxes, 1:splines
-if use_3d==1
+use_3d = 1; % data type, 0:bboxes, 1:splines
+if use_3d==0
     Traj=DataBboxes;
 else
     Traj=DataSplines;
@@ -26,14 +26,20 @@ if use_3d==0
     Iter = 20;
     rmax = 100;%100 is best for bbox;
     rmin = 1;%1 is best for bbox
-else
-    Iter = 20;
-    if dataset_name=="00001_00005"
-        rmax = 100;%50 is best for spline
-    else
+    if dataset_name=="00002_00005"
         rmax = 50;
     end
+else
+    Iter = 20;
+    rmax = 40;
     rmin = 1;%1 is best for spline
+    if dataset_name=="00001_00005"
+        rmax = 100;%50 is best for spline
+    elseif dataset_name=="00002_00005"
+        rmax = 40;
+        
+    end
+    
 end
 wr=rmax:(rmin-rmax)/(Iter-1):rmin;
 lambda=0.5;
