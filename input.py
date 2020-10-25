@@ -175,6 +175,6 @@ if len(sys.argv) == 1:
     print("python input.py [dataset_idx]")
     exit(0)
 if len(sys.argv)>=3 and sys.argv[2]=='as-vd':
-    vd_to_mat_as_vd(use_old_vd, 0 if use_old_vd else int(sys.argv[1]))
+    vd_to_mat_as_vd(use_old_vd, 0 if use_old_vd else int(sys.argv[1])) # vd cluster into mat
 else:
-    vd_to_mat(use_old_vd, 0 if use_old_vd else int(sys.argv[1]))
+    vd_to_mat(use_old_vd, 0 if use_old_vd else int(sys.argv[1])) # correct vd cluster into mat

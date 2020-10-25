@@ -88,8 +88,8 @@ def draw_vd(use_old_vd, dataset_idx):
     traj_name = 'DataSplines' if use_3d else 'DataBboxes'
     spline_points_before = np.array([np.array(d['data']).flatten() for d in mat_data_before[traj_name][0]])
     cluster_ids_gt = np.array([int(d['label'][0][0]) for d in mat_data_before[traj_name][0]])-2
-
     draw_traj_proj_all(spline_points_before, cluster_ids_gt, method_name, dataset_name, use_3d, thick=False, affine_w2s=affine_w2s, result_dir='visual_clusters_goin_paper')
+
 
     use_3d = False
     method_name = 'vd_3d' if use_3d else 'vd_2d'
