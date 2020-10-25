@@ -17,7 +17,7 @@ tableau10 = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),
             (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),  
             (148, 103, 189), (197, 176, 213), (140, 86, 75), (196, 156, 148),  
             (227, 119, 194), (247, 182, 210), (127, 127, 127), (199, 199, 199),  
-            (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)]
+            (188, 189, 34), (219, 219, 141), (23, 190, 207), (158, 218, 229)][::2]
 
 selected_out_index_dict = {
         '00002_00005':[117,120,58,62,42],
@@ -81,6 +81,7 @@ def draw_traj_proj_all(spline_points, cluster_ids, method_name, dataset_name, us
         cluster_id_color_mapping = [9,2,4,6]#use_3d=False
     elif dataset_name=='aic-test-S02-c007':
         cluster_id_color_mapping = [5,1,9,0,2,6,3,7,8,4]
+        # cluster_id_color_mapping = [5,1,9,0,2,2,1,1,2,0] # temp first level clusters
     else:
         cluster_id_color_mapping = range(20)
 
@@ -100,9 +101,9 @@ def draw_traj_proj_all(spline_points, cluster_ids, method_name, dataset_name, us
         img = cv2.imread('../visual_opengl/%s/bird_view.png'%(dataset_name))
     else:
         img = cv2.imread('../visual_opengl/%s/cam_view.jpg'%(dataset_name))
-    # hsvImg = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-    # hsvImg[...,2] = hsvImg[...,2]*0.4
-    # img = cv2.cvtColor(hsvImg, cv2.COLOR_HSV2BGR)
+    hsvImg = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    hsvImg[...,2] = hsvImg[...,2]*0.4
+    img = cv2.cvtColor(hsvImg, cv2.COLOR_HSV2BGR)
 
     for i, (spline, cluster_id) in enumerate(zip(spline_points, cluster_ids)):
         if dataset_name in selected_out_index_dict and i in selected_out_index_dict[dataset_name]:
