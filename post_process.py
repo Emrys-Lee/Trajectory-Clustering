@@ -57,7 +57,7 @@ def find_best_affine(use_old_vd, dataset_idx):
     spline_points_before = np.array([np.array(d['data']).flatten() for d in mat_data_before[traj_name][0]])
     cluster_ids_gt = np.array([int(d['label'][0][0]) for d in mat_data_before[traj_name][0]])-2
 
-    n_random = 100
+    n_random = 400
     line = ""
     # generate random offset
     result_dir = 'random_affine/'+dataset_name
@@ -80,7 +80,7 @@ def draw_vd(use_old_vd, dataset_idx):
     # show gt
     result_name = dataset_name + "vd.mat"
     mat_data_before = loadmat(result_name)
-    print(mat_data_before.keys())
+    print(result_name, mat_data_before.keys())
     affine_w2s = find_affine_w2s(dataset_name)
 
     use_3d = True
@@ -88,7 +88,7 @@ def draw_vd(use_old_vd, dataset_idx):
     traj_name = 'DataSplines' if use_3d else 'DataBboxes'
     spline_points_before = np.array([np.array(d['data']).flatten() for d in mat_data_before[traj_name][0]])
     cluster_ids_gt = np.array([int(d['label'][0][0]) for d in mat_data_before[traj_name][0]])-2
-    draw_traj_proj_all(spline_points_before, cluster_ids_gt, method_name, dataset_name, use_3d, thick=False, affine_w2s=affine_w2s, result_dir='visual_clusters_goin_paper')
+    draw_traj_proj_all(spline_points_before, cluster_ids_gt, method_name, dataset_name, use_3d, thick=False, affine_w2s=affine_w2s, result_dir='visual_clusters_goin_paper/')
 
     ### temp for first level cluster
     # method_name = 'vd_3d_first' # temp for first level cluster
@@ -99,7 +99,7 @@ def draw_vd(use_old_vd, dataset_idx):
     method_name = 'vd_3d' if use_3d else 'vd_2d'
     traj_name = 'DataSplines' if use_3d else 'DataBboxes'
     spline_points_before = np.array([np.array(d['data']).flatten() for d in mat_data_before[traj_name][0]])
-    draw_traj_proj_all(spline_points_before, cluster_ids_gt, method_name, dataset_name, use_3d, thick=False, result_dir='visual_clusters_goin_paper')
+    draw_traj_proj_all(spline_points_before, cluster_ids_gt, method_name, dataset_name, use_3d, thick=False, result_dir='visual_clusters_goin_paper/')
     draw_traj_all_id_spline_with_cluster(spline_points_before, cluster_ids_gt)
 
 
@@ -132,7 +132,7 @@ def eval_mat(use_old_vd, use_3d, dataset_idx):
     #draw_traj_proj_all(spline_points_before, cluster_ids_gt, method_name, dataset_idx, use_3d, thick=False)
     #exit(0)
 
-    affine_w2s = find_affine_w2s(dataset_name)
+    # affine_w2s = find_affine_w2s(dataset_name)
 
     # evaluate and show each method
     for (traj_name, method_name) in zip(['Traj1', 'Traj2', 'Traj3', 'Traj4'], ['MS', 'MBMS', 'AMKS noreg', 'AMKS']):
@@ -163,10 +163,10 @@ def eval_mat(use_old_vd, use_3d, dataset_idx):
 
         ### below two lines used for evaluation
         print(str("3D results" if use_3d else "2D results") + ' ' + method_name)
-        #eval_cluster_accuracy(cluster_ids, cluster_ids_gt)
+        eval_cluster_accuracy(cluster_ids, cluster_ids_gt)
         #draw_traj_all_id_spline_with_cluster(spline_points_before_2d, cluster_ids)
-        draw_traj_proj_all(spline_points_before_3d, cluster_ids, method_name+'_3d_before_use3d_'+str(use_3d), dataset_name, use_3d=True, thick=False, affine_w2s=affine_w2s, result_dir='visual_clusters_goin_paper')
-        draw_traj_proj_all(spline_points_before_2d, cluster_ids, method_name+'_2d_before_use3d_'+str(use_3d), dataset_name, use_3d=False, thick=False, affine_w2s=affine_w2s, result_dir='visual_clusters_goin_paper')
+        #draw_traj_proj_all(spline_points_before_3d, cluster_ids, method_name+'_3d_before_use3d_'+str(use_3d), dataset_name, use_3d=True, thick=False, affine_w2s=affine_w2s, result_dir='visual_clusters_goin_paper')
+        #draw_traj_proj_all(spline_points_before_2d, cluster_ids, method_name+'_2d_before_use3d_'+str(use_3d), dataset_name, use_3d=False, thick=False, affine_w2s=affine_w2s, result_dir='visual_clusters_goin_paper')
 
 
 def eval_cluster_accuracy(cluster_ids0, cluster_ids1):
